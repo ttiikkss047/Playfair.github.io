@@ -1,18 +1,15 @@
 function getAlphabet(text) {
     if (/[ա-ֆ]/i.test(text)) {
-        // Հայերեն այբուբեն (39 տառ)
         return "աբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքևօֆ";
     } else if (/[а-яё]/i.test(text)) {
-        // Ռուսերեն այբուբեն (33 տառ)
         return "абвгдеёжзийклмнопрстуфхцчшщъыьэюя";
     } else {
-        // Լատիներեն այբուբեն (I/J նույնացվում են)
-        return "ABCDEFGHIKLMNOPQRSTUVWXYZ";
+        return "abcdefghiklmnopqrstuvwxyz"; // I/J նույնն են
     }
 }
 
 function createMatrix(key, alphabet) {
-    key = key.toLowerCase().replace(/[^" + alphabet + "]/g, "");
+    key = key.toLowerCase().replace(new RegExp(`[^${alphabet}]`, "g"), "");
     let seen = new Set();
     let filtered = "";
 
@@ -48,7 +45,7 @@ function findPosition(matrix, letter) {
 }
 
 function prepareText(text, alphabet) {
-    text = text.toLowerCase().replace(/[^" + alphabet + "]/g, "");
+    text = text.toLowerCase().replace(new RegExp(`[^${alphabet}]`, "g"), "");
     let result = "";
     for (let i = 0; i < text.length; i++) {
         let a = text[i];
@@ -70,10 +67,10 @@ function prepareText(text, alphabet) {
 function encrypt() {
     let text = document.getElementById("text").value;
     let alphabet = getAlphabet(text);
-    let matrix = createMatrix("գաղտնիք", alphabet); // բանալի բառ
-
+    let matrix = createMatrix("գաղտնիք", alphabet);
     let prepared = prepareText(text, alphabet);
     let output = "";
+    let steps = [];
 
     for (let i = 0; i < prepared.length; i += 2) {
         let a = prepared[i], b = prepared[i + 1];
@@ -81,28 +78,32 @@ function encrypt() {
         let [r2, c2] = findPosition(matrix, b);
 
         if (r1 === r2) {
-            output += matrix[r1][(c1 + 1) % matrix.length];
-            output += matrix[r2][(c2 + 1) % matrix.length];
+            output += matrix[r1][(c1 + 1) % matrix[r1].length];
+            output += matrix[r2][(c2 + 1) % matrix[r2].length];
+            steps.push(`${a}${b} → նույն տող → ${output.slice(-2)}`);
         } else if (c1 === c2) {
             output += matrix[(r1 + 1) % matrix.length][c1];
             output += matrix[(r2 + 1) % matrix.length][c2];
+            steps.push(`${a}${b} → նույն սյուն → ${output.slice(-2)}`);
         } else {
             output += matrix[r1][c2];
             output += matrix[r2][c1];
+            steps.push(`${a}${b} → ուղղանկյուն → ${output.slice(-2)}`);
         }
     }
 
-    document.getElementById("result").textContent = output;
+    document.getElementById("result").textContent = "Գաղտնագրված տեքստ: " + output;
     document.getElementById("details").textContent = matrix.map(r => r.join(" ")).join("\n");
+    document.getElementById("steps").textContent = steps.join("\n");
 }
 
 function decrypt() {
     let text = document.getElementById("text").value;
     let alphabet = getAlphabet(text);
-    let matrix = createMatrix("գաղտնիք", alphabet); // բանալի բառ
-
-    let prepared = text.toLowerCase().replace(/[^" + alphabet + "]/g, "");
+    let matrix = createMatrix("գաղտնիք", alphabet);
+    let prepared = text.toLowerCase().replace(new RegExp(`[^${alphabet}]`, "g"), "");
     let output = "";
+    let steps = [];
 
     for (let i = 0; i < prepared.length; i += 2) {
         let a = prepared[i], b = prepared[i + 1];
@@ -110,17 +111,21 @@ function decrypt() {
         let [r2, c2] = findPosition(matrix, b);
 
         if (r1 === r2) {
-            output += matrix[r1][(c1 - 1 + matrix.length) % matrix.length];
-            output += matrix[r2][(c2 - 1 + matrix.length) % matrix.length];
+            output += matrix[r1][(c1 - 1 + matrix[r1].length) % matrix[r1].length];
+            output += matrix[r2][(c2 - 1 + matrix[r2].length) % matrix[r2].length];
+            steps.push(`${a}${b} → նույն տող → ${output.slice(-2)}`);
         } else if (c1 === c2) {
             output += matrix[(r1 - 1 + matrix.length) % matrix.length][c1];
             output += matrix[(r2 - 1 + matrix.length) % matrix.length][c2];
+            steps.push(`${a}${b} → նույն սյուն → ${output.slice(-2)}`);
         } else {
             output += matrix[r1][c2];
             output += matrix[r2][c1];
+            steps.push(`${a}${b} → ուղղանկյուն → ${output.slice(-2)}`);
         }
     }
 
-    document.getElementById("result").textContent = output;
+    document.getElementById("result").textContent = "Վերծանված տեքստ: " + output;
     document.getElementById("details").textContent = matrix.map(r => r.join(" ")).join("\n");
+    document.getElementById("steps").textContent = steps.join("\n");
 }
